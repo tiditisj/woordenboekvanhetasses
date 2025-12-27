@@ -12,7 +12,6 @@
             --bg-main: #121212;
             --bg-card: #1e1e1e;
             --text-primary: #e0e0e0;
-            --accent-blue: #3b82f6;
         }
 
         body { 
@@ -23,19 +22,55 @@
         
         .results-container { min-height: 200px; }
 
-        /* Styling voor de HTML markup die al in je JSON staat */
-        u { text-decoration-color: var(--accent-blue); text-underline-offset: 4px; }
-        b, strong { color: #fff; font-weight: 700; }
-
         .sticky-header {
-            background-color: rgba(18, 18, 18, 0.85);
+            background-color: rgba(18, 18, 18, 0.95);
             backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        #searchInput:focus { box-shadow: 0 0 20px rgba(59, 130, 246, 0.2); }
-        
+        .description-text {
+            line-height: 1.6;
+            font-size: 1.125rem;
+            color: #d1d5db;
+        }
+
+        /* Highlighting stijl */
+        mark {
+            background-color: rgba(59, 130, 246, 0.3);
+            color: #60a5fa;
+            border-radius: 2px;
+            font-style: normal;
+        }
+
+        /* Toggle switch styling */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 34px;
+            height: 20px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #333;
+            transition: .4s;
+            border-radius: 20px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 14px; width: 14px;
+            left: 3px; bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider { background-color: #3b82f6; }
+        input:checked + .slider:before { transform: translateX(14px); }
+
+        /* Scrollbar styling */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: var(--bg-main); }
         ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
@@ -45,16 +80,26 @@
 
     <header class="max-w-3xl mx-auto pt-12 pb-6 text-center">
         <h1 class="text-5xl font-extrabold text-blue-500 mb-2">Woordenboek van het Asses</h1>
-        <p class="text-gray-400 text-lg">Doorzoek ons digitaal erfgoed van 11.000+ woorden.</p>
+        <p class="text-gray-400 text-lg">11.000+ woorden uit het Asses archief.</p>
     </header>
 
     <div class="sticky top-0 z-50 sticky-header py-4 mb-4">
         <div class="max-w-3xl mx-auto px-4 md:px-8">
             <input type="text" id="searchInput" 
-                placeholder="Zoek een dialectwoord of betekenis..." 
-                class="w-full p-5 rounded-2xl bg-[#252525] border-2 border-gray-800 shadow-2xl text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-900 outline-none text-xl transition-all placeholder-gray-600">
-            <div id="status" class="mt-2 text-right text-xs text-gray-500 mr-2 italic uppercase tracking-widest">
-                Woordenboek laden...
+                placeholder="Zoek een woord of betekenis..." 
+                class="w-full p-5 rounded-2xl bg-[#252525] border-2 border-gray-800 text-white focus:border-blue-500 outline-none text-xl transition-all">
+            
+            <div class="mt-2 flex justify-between items-center px-2">
+                <div id="status" class="text-xs text-gray-500 italic tracking-widest uppercase">
+                    Laden...
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-[10px] text-gray-500 uppercase tracking-tighter">Markeren</span>
+                    <label class="switch">
+                        <input type="checkbox" id="highlightToggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
             </div>
         </div>
     </div>
@@ -65,77 +110,88 @@
 
     <script>
         let fuse;
+        let lastResults = []; // Om resultaten opnieuw te renderen bij toggle
         const resultsDiv = document.getElementById('results');
         const searchInput = document.getElementById('searchInput');
         const statusDiv = document.getElementById('status');
+        const highlightToggle = document.getElementById('highlightToggle');
+
+        function applyHighlight(html, term) {
+            if (!term || !highlightToggle.checked) return html;
+            const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const regex = new RegExp(`(${escapedTerm})(?![^<]*>)`, 'gi');
+            return html.replace(regex, '<mark>$1</mark>');
+        }
+
+        function renderResults(results, query) {
+            if (results.length === 0) {
+                resultsDiv.innerHTML = `<div class="text-center mt-10 text-gray-400">Geen resultaten voor "${query}".</div>`;
+                return;
+            }
+
+            resultsDiv.innerHTML = results.slice(0, 100).map(result => {
+                const wordContent = result.item.worddisplay || result.item.word;
+                const descContent = result.item.descriptiondisplay || result.item.description;
+
+                return `
+                <div class="bg-[#1e1e1e] p-6 rounded-2xl shadow-lg border border-gray-800 transition-all">
+                    <div class="flex flex-col">
+                        <div class="text-2xl font-bold text-blue-400">
+                            ${applyHighlight(wordContent, query)}
+                        </div>
+                        <div class="description-text mt-2">
+                            ${applyHighlight(descContent, query)}
+                        </div>
+                    </div>
+                </div>
+            `}).join('');
+        }
 
         fetch('words.json')
             .then(response => response.json())
             .then(data => {
                 const options = {
-                    keys: [
-                        { name: 'word', weight: 2 },
-                        { name: 'description', weight: 0.5 }
-                    ],
+                    keys: [{ name: 'word', weight: 2 }, { name: 'description', weight: 0.5 }],
                     threshold: 0.3,
                     includeScore: true,
                     useExtendedSearch: true
-                    // includeMatches is hier verwijderd omdat we WordDisplay gebruiken
                 };
                 fuse = new Fuse(data, options);
                 statusDiv.innerText = `${data.length.toLocaleString('nl-NL')} woorden geladen`;
-                resultsDiv.innerHTML = '<p class="text-center text-gray-500 mt-10 text-lg">Typ een woord om te beginnen.</p>';
             });
 
         searchInput.addEventListener('input', (e) => {
             const query = e.target.value.trim();
             if (query.length < 2) {
-                resultsDiv.innerHTML = '<p class="text-center text-gray-500 mt-10 text-lg">Typ minstens 2 letters...</p>';
+                resultsDiv.innerHTML = '<p class="text-center text-gray-500 mt-10 text-lg">Typ om te zoeken...</p>';
+                lastResults = [];
                 return;
             }
 
             const processedQuery = query.split(' ').filter(w => w.length > 0).map(w => `'${w}`).join(' ');
-            let results = fuse.search(processedQuery);
+            lastResults = fuse.search(processedQuery);
             
-            // Sortering op basis van de verborgen 'word' kolom
-            results.sort((a, b) => {
+            lastResults.sort((a, b) => {
                 const aWord = a.item.word.toLowerCase();
                 const bWord = b.item.word.toLowerCase();
                 const q = query.toLowerCase();
-
-                const aExact = aWord === q;
-                const bExact = bWord === q;
-                if (aExact && !bExact) return -1;
-                if (!aExact && bExact) return 1;
-
-                const aStarts = aWord.startsWith(q);
-                const bStarts = bWord.startsWith(q);
-                if (aStarts && !bStarts) return -1;
-                if (!aStarts && bStarts) return 1;
-
+                if (aWord === q && bWord !== q) return -1;
+                if (aWord !== q && bWord === q) return 1;
+                if (aWord.startsWith(q) && !bWord.startsWith(q)) return -1;
+                if (!aWord.startsWith(q) && bWord.startsWith(q)) return 1;
                 return a.score - b.score;
             });
 
-            if (results.length === 0) {
-                resultsDiv.innerHTML = `<div class="text-center mt-10 text-gray-400 font-medium">Geen resultaten voor "${query}"</div>`;
-                return;
+            renderResults(lastResults, query);
+            statusDiv.innerText = `${lastResults.length} resultaten`;
+        });
+
+        // Event listener voor de toggle knop
+        highlightToggle.addEventListener('change', () => {
+            const query = searchInput.value.trim();
+            if (query.length >= 2 && lastResults.length > 0) {
+                renderResults(lastResults, query);
             }
-
-            resultsDiv.innerHTML = results.slice(0, 100).map(result => `
-                <div class="bg-[#1e1e1e] p-6 rounded-2xl shadow-lg border border-gray-800 hover:border-blue-900 transition-all group">
-                    <div class="flex flex-col">
-                        <span class="text-2xl font-bold text-blue-400 group-hover:text-blue-300 transition-colors">
-                            ${result.item.wordDisplay || result.item.word}
-                        </span>
-                        <div class="h-1 w-10 bg-blue-900 my-2 rounded group-hover:w-20 transition-all duration-300"></div>
-                        <p class="text-gray-300 text-lg italic leading-relaxed">
-                            ${result.item.descriptionDisplay || result.item.description}
-                        </p>
-                    </div>
-                </div>
-            `).join('');
-
-            statusDiv.innerText = `${results.length} resultaten gevonden`;
         });
     </script>
 </body>

@@ -131,6 +131,33 @@
             return html.replace(regex, '<mark>$1</mark>');
         }
 
+        // Hoofdfunctie voor het uitvoeren van de zoekopdracht
+        function performSearch(query) {
+            if (query.length < 2) {
+                resultsDiv.innerHTML = '<p class="text-center text-gray-500 mt-10 text-lg">Typ om te zoeken...</p>';
+                lastResults = [];
+                statusDiv.innerText = "";
+                return;
+            }
+
+            const processedQuery = query.split(' ').filter(w => w.length > 0).map(w => `'${w}`).join(' ');
+            lastResults = fuse.search(processedQuery);
+            
+            lastResults.sort((a, b) => {
+                const aWord = a.item.word.toLowerCase();
+                const bWord = b.item.word.toLowerCase();
+                const q = query.toLowerCase();
+                if (aWord === q && bWord !== q) return -1;
+                if (aWord !== q && bWord === q) return 1;
+                if (aWord.startsWith(q) && !bWord.startsWith(q)) return -1;
+                if (!aWord.startsWith(q) && bWord.startsWith(q)) return 1;
+                return a.score - b.score;
+            });
+
+            renderResults(lastResults, query);
+            statusDiv.innerText = `${lastResults.length} resultaten`;
+        }
+
         function renderResults(results, query) {
             if (results.length === 0) {
                 resultsDiv.innerHTML = `<div class="text-center mt-10 text-gray-400">Geen resultaten voor "${query}".</div>`;
@@ -155,6 +182,17 @@
             `}).join('');
         }
 
+        // URL updaten met de zoekterm
+        function updateURL(query) {
+            const url = new URL(window.location);
+            if (query) {
+                url.searchParams.set('q', query);
+            } else {
+                url.searchParams.delete('q');
+            }
+            window.history.replaceState({}, '', url);
+        }
+
         fetch('words.json')
             .then(response => response.json())
             .then(data => {
@@ -166,32 +204,20 @@
                 };
                 fuse = new Fuse(data, options);
                 statusDiv.innerText = `${data.length.toLocaleString('nl-NL')} woorden geladen`;
+
+                // Check of er een zoekterm in de URL staat bij het laden
+                const params = new URLSearchParams(window.location.search);
+                const queryParam = params.get('q');
+                if (queryParam) {
+                    searchInput.value = queryParam;
+                    performSearch(queryParam);
+                }
             });
 
         searchInput.addEventListener('input', (e) => {
             const query = e.target.value.trim();
-            if (query.length < 2) {
-                resultsDiv.innerHTML = '<p class="text-center text-gray-500 mt-10 text-lg">Typ om te zoeken...</p>';
-                lastResults = [];
-                return;
-            }
-
-            const processedQuery = query.split(' ').filter(w => w.length > 0).map(w => `'${w}`).join(' ');
-            lastResults = fuse.search(processedQuery);
-            
-            lastResults.sort((a, b) => {
-                const aWord = a.item.word.toLowerCase();
-                const bWord = b.item.word.toLowerCase();
-                const q = query.toLowerCase();
-                if (aWord === q && bWord !== q) return -1;
-                if (aWord !== q && bWord === q) return 1;
-                if (aWord.startsWith(q) && !bWord.startsWith(q)) return -1;
-                if (!aWord.startsWith(q) && bWord.startsWith(q)) return 1;
-                return a.score - b.score;
-            });
-
-            renderResults(lastResults, query);
-            statusDiv.innerText = `${lastResults.length} resultaten`;
+            performSearch(query);
+            updateURL(query);
         });
 
         highlightToggle.addEventListener('change', () => {

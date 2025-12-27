@@ -18,9 +18,12 @@
             background-color: var(--bg-main); 
             color: var(--text-primary); 
             scroll-behavior: smooth;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
         }
         
-        .results-container { min-height: 200px; }
+        .results-container { min-height: 200px; flex: 1; }
 
         .sticky-header {
             background-color: rgba(18, 18, 18, 0.95);
@@ -76,11 +79,10 @@
         ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
     </style>
 </head>
-<body class="font-sans leading-normal tracking-normal pb-20">
+<body class="font-sans leading-normal tracking-normal">
 
     <header class="max-w-3xl mx-auto pt-12 pb-6 text-center">
         <h1 class="text-5xl font-extrabold text-blue-500 mb-2">Woordenboek van het Asses</h1>
-        <p class="text-gray-400 text-lg">11.000+ woorden uit het Asses archief.</p>
     </header>
 
     <div class="sticky top-0 z-50 sticky-header py-4 mb-4">
@@ -104,13 +106,19 @@
         </div>
     </div>
 
-    <div class="max-w-3xl mx-auto px-4 md:px-8">
+    <main class="max-w-3xl mx-auto px-4 md:px-8 flex-grow">
         <div id="results" class="results-container space-y-4"></div>
-    </div>
+    </main>
+
+    <footer class="w-full py-8 mt-12 border-t border-gray-900 text-center">
+        <p class="text-gray-600 text-sm tracking-wide">
+            Auteur: <span class="text-gray-400">Lode Pletinckx</span>
+        </p>
+    </footer>
 
     <script>
         let fuse;
-        let lastResults = []; // Om resultaten opnieuw te renderen bij toggle
+        let lastResults = [];
         const resultsDiv = document.getElementById('results');
         const searchInput = document.getElementById('searchInput');
         const statusDiv = document.getElementById('status');
@@ -186,7 +194,6 @@
             statusDiv.innerText = `${lastResults.length} resultaten`;
         });
 
-        // Event listener voor de toggle knop
         highlightToggle.addEventListener('change', () => {
             const query = searchInput.value.trim();
             if (query.length >= 2 && lastResults.length > 0) {

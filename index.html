@@ -37,7 +37,6 @@
             color: #d1d5db;
         }
 
-        /* Highlighting stijl */
         mark {
             background-color: rgba(59, 130, 246, 0.3);
             color: #60a5fa;
@@ -45,7 +44,6 @@
             font-style: normal;
         }
 
-        /* Toggle switch styling */
         .switch {
             position: relative;
             display: inline-block;
@@ -73,7 +71,6 @@
         input:checked + .slider { background-color: #3b82f6; }
         input:checked + .slider:before { transform: translateX(14px); }
 
-        /* Scrollbar styling */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: var(--bg-main); }
         ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
@@ -124,14 +121,20 @@
         const statusDiv = document.getElementById('status');
         const highlightToggle = document.getElementById('highlightToggle');
 
+        // Hulpfunctie om accenten te negeren (schâitn -> schaitn)
+        const normalize = (str) => {
+            return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        };
+
         function applyHighlight(html, term) {
             if (!term || !highlightToggle.checked) return html;
             const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            // We laten de highlight nu ook op accenten reageren door de regex flexibeler te maken
+            // Voor een simpele match gebruiken we de term direct.
             const regex = new RegExp(`(${escapedTerm})(?![^<]*>)`, 'gi');
             return html.replace(regex, '<mark>$1</mark>');
         }
 
-        // Hoofdfunctie voor het uitvoeren van de zoekopdracht
         function performSearch(query) {
             if (query.length < 2) {
                 resultsDiv.innerHTML = '<p class="text-center text-gray-500 mt-10 text-lg">Typ om te zoeken...</p>';
@@ -140,17 +143,28 @@
                 return;
             }
 
-            const processedQuery = query.split(' ').filter(w => w.length > 0).map(w => `'${w}`).join(' ');
-            lastResults = fuse.search(processedQuery);
+            // We zoeken met Fuse.js
+            lastResults = fuse.search(query);
             
             lastResults.sort((a, b) => {
                 const aWord = a.item.word.toLowerCase();
                 const bWord = b.item.word.toLowerCase();
                 const q = query.toLowerCase();
-                if (aWord === q && bWord !== q) return -1;
-                if (aWord !== q && bWord === q) return 1;
-                if (aWord.startsWith(q) && !bWord.startsWith(q)) return -1;
-                if (!aWord.startsWith(q) && bWord.startsWith(q)) return 1;
+                const qNorm = normalize(q);
+                
+                // Sorteer-prioriteit checkt nu ook op genormaliseerde versie
+                const aExact = aWord === q || normalize(aWord) === qNorm;
+                const bExact = bWord === q || normalize(bWord) === qNorm;
+
+                if (aExact && !bExact) return -1;
+                if (!aExact && bExact) return 1;
+
+                const aStarts = aWord.startsWith(q) || normalize(aWord).startsWith(qNorm);
+                const bStarts = bWord.startsWith(q) || normalize(bWord).startsWith(qNorm);
+
+                if (aStarts && !bStarts) return -1;
+                if (!aStarts && bStarts) return 1;
+
                 return a.score - b.score;
             });
 
@@ -182,7 +196,6 @@
             `}).join('');
         }
 
-        // URL updaten met de zoekterm
         function updateURL(query) {
             const url = new URL(window.location);
             if (query) {
@@ -200,12 +213,17 @@
                     keys: [{ name: 'word', weight: 2 }, { name: 'description', weight: 0.5 }],
                     threshold: 0.3,
                     includeScore: true,
-                    useExtendedSearch: true
+                    // De 'ignoreLocation' helpt bij langere woorden
+                    ignoreLocation: true,
+                    // DE BELANGRIJKSTE TOEVOEGING: Accent-ongevoeligheid
+                    getFn: (obj, key) => {
+                        const value = obj[key];
+                        return normalize(value);
+                    }
                 };
                 fuse = new Fuse(data, options);
                 statusDiv.innerText = `${data.length.toLocaleString('nl-NL')} woorden geladen`;
 
-                // Check of er een zoekterm in de URL staat bij het laden
                 const params = new URLSearchParams(window.location.search);
                 const queryParam = params.get('q');
                 if (queryParam) {

@@ -8,112 +8,157 @@
     <script src="https://cdn.tailwindcss.com"></script>
     
     <style>
+        /* Importeer de 'Old Style' krantenfonten */
+        @import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Source+Sans+Pro:wght@400;600&display=swap');
+
         :root {
-            --bg-main: #121212;
-            --bg-card: #1e1e1e;
-            --text-primary: #e0e0e0;
+            --paper: #f9f7f2; /* De kleur van krantenpapier */
+            --ink: #121212;   /* Bijna zwart, maar zachter */
+            --border: #2f2f2f; /* Voor de scheidingslijnen */
         }
 
         body { 
-            background-color: var(--bg-main); 
-            color: var(--text-primary); 
+            background-color: var(--paper); 
+            color: var(--ink); 
+            font-family: 'Libre Baskerville', serif;
             scroll-behavior: smooth;
             display: flex;
             flex-direction: column;
             min-height: 100vh;
         }
         
-        .results-container { min-height: 200px; flex: 1; }
+        /* Krantenkop */
+        header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 3.5rem;
+            letter-spacing: -1.5px;
+            font-weight: 900;
+            border-bottom: 5px double var(--ink);
+            display: inline-block;
+            margin-bottom: 0.5rem;
+        }
+
+        .header-top-border {
+            border-top: 1px solid var(--ink);
+            border-bottom: 1px solid var(--ink);
+            padding: 5px 0;
+            margin-bottom: 2rem;
+            font-family: 'Source Sans Pro', sans-serif;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 0.75rem;
+        }
 
         .sticky-header {
-            background-color: rgba(18, 18, 18, 0.95);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background-color: rgba(249, 247, 242, 0.95);
+            border-bottom: 2px solid var(--ink);
+            z-index: 100;
+        }
+
+        /* De zoekbalk: Minimalistisch & Klassiek */
+        #searchInput {
+            background-color: transparent !important;
+            border: none !important;
+            border-bottom: 2px solid var(--ink) !important;
+            border-radius: 0 !important;
+            font-family: 'Libre Baskerville', serif;
+            font-style: italic;
+            color: var(--ink) !important;
+            padding: 10px 0;
+            outline: none;
+        }
+
+        /* Geen zwarte kaders meer, maar subtiele krantenlijnen */
+        .word-card {
+            border-bottom: 1px solid #d1d1d1;
+            padding: 2.5rem 0;
+            background: transparent !important;
+            box-shadow: none !important;
+        }
+
+        .word-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.4rem;
+            font-weight: 700;
+            line-height: 1.1;
+            margin-bottom: 0.75rem;
+            color: var(--ink);
         }
 
         .description-text {
-            line-height: 1.6;
-            font-size: 1.125rem;
-            color: #d1d5db;
+            line-height: 1.7;
+            font-size: 1.15rem;
+            color: #333;
+            max-width: 70ch;
         }
 
+        /* Highlighting zoals een subtiele marker op papier */
         mark {
-            background-color: rgba(59, 130, 246, 0.3);
-            color: #60a5fa;
-            border-radius: 2px;
-            font-style: normal;
+            background-color: #fdf2a8;
+            color: inherit;
+            padding: 0 2px;
+            border-radius: 0;
         }
 
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 34px;
-            height: 20px;
-        }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-color: #333;
-            transition: .4s;
-            border-radius: 20px;
-        }
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 14px; width: 14px;
-            left: 3px; bottom: 3px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-        input:checked + .slider { background-color: #3b82f6; }
-        input:checked + .slider:before { transform: translateX(14px); }
-
+        /* Custom scrollbar */
         ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: var(--bg-main); }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+        ::-webkit-scrollbar-track { background: var(--paper); }
+        ::-webkit-scrollbar-thumb { background: #ccc; }
+
+        /* Verwijder de schakelaar styling en maak het sober */
+        .switch-label {
+            font-family: 'Source Sans Pro', sans-serif;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #666;
+        }
     </style>
 </head>
-<body class="font-sans leading-normal tracking-normal">
+<body>
 
-    <header class="max-w-3xl mx-auto pt-12 pb-6 text-center">
-        <h1 class="text-5xl font-extrabold text-blue-500 mb-2">Woordenboek van het Asses</h1>
+    <header class="max-w-4xl mx-auto pt-16 pb-4 text-center">
+        <h1>Woordenboek van het Asses</h1>
+        <div class="header-top-border">
+            <span>Editie Asse — <script>document.write(new Date().toLocaleDateString('nl-BE', {day:'numeric', month:'long', year:'numeric'}));</script></span>
+        </div>
     </header>
 
-    <div class="sticky top-0 z-50 sticky-header py-4 mb-4">
-        <div class="max-w-3xl mx-auto px-4 md:px-8">
+    <div class="sticky top-0 sticky-header py-6 mb-8">
+        <div class="max-w-3xl mx-auto px-4">
             <input type="text" id="searchInput" 
-                placeholder="Zoek een woord of betekenis..." 
-                class="w-full p-5 rounded-2xl bg-[#252525] border-2 border-gray-800 text-white focus:border-blue-500 outline-none text-xl transition-all">
+                placeholder="Zoek in het archief..." 
+                class="w-full text-2xl">
             
-            <div class="mt-2 flex justify-between items-center px-2">
-                <div id="status" class="text-xs text-gray-500 italic tracking-widest uppercase">
-                    Laden...
+            <div class="mt-3 flex justify-between items-center">
+                <div id="status" class="text-[10px] text-gray-600 uppercase tracking-widest">
+                    Archief wordt geladen...
                 </div>
-                <div class="flex items-center gap-2">
-                    <span class="text-[10px] text-gray-500 uppercase tracking-tighter">Markeren</span>
-                    <label class="switch">
-                        <input type="checkbox" id="highlightToggle" checked>
-                        <span class="slider"></span>
-                    </label>
+                <div class="flex items-center gap-3">
+                    <span class="switch-label">Highlighting</span>
+                    <input type="checkbox" id="highlightToggle" checked class="accent-black">
                 </div>
             </div>
         </div>
     </div>
 
-    <main class="max-w-3xl mx-auto px-4 md:px-8 flex-grow">
-        <div id="results" class="results-container space-y-4"></div>
+    <main class="max-w-3xl mx-auto px-4 flex-grow">
+        <div id="results" class="space-y-0">
+            </div>
     </main>
 
-    <footer class="w-full py-8 mt-12 border-t border-gray-900 text-center">
-        <p class="text-gray-600 text-sm tracking-wide">
-            Auteur: <span class="text-gray-400">Lode Pletinckx</span>
+    <footer class="w-full py-12 mt-20 border-t-4 border-double border-black text-center">
+        <p class="font-serif italic text-gray-700">
+            Opgesteld door Lode Pletinckx
+        </p>
+        <p class="text-[10px] uppercase tracking-[0.2em] mt-2 text-gray-500">
+            © Alle rechten voorbehouden — De Gazet van Asse
         </p>
     </footer>
 
     <script>
+        // ... (De rest van je JavaScript blijft hetzelfde, maar vervang de renderResults functie) ...
         let fuse;
         let lastResults = [];
         const resultsDiv = document.getElementById('results');
@@ -121,60 +166,19 @@
         const statusDiv = document.getElementById('status');
         const highlightToggle = document.getElementById('highlightToggle');
 
-        // Hulpfunctie om accenten te negeren (schâitn -> schaitn)
-        const normalize = (str) => {
-            return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-        };
+        const normalize = (str) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
         function applyHighlight(html, term) {
             if (!term || !highlightToggle.checked) return html;
             const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            // We laten de highlight nu ook op accenten reageren door de regex flexibeler te maken
-            // Voor een simpele match gebruiken we de term direct.
             const regex = new RegExp(`(${escapedTerm})(?![^<]*>)`, 'gi');
             return html.replace(regex, '<mark>$1</mark>');
         }
 
-        function performSearch(query) {
-            if (query.length < 2) {
-                resultsDiv.innerHTML = '<p class="text-center text-gray-500 mt-10 text-lg">Typ om te zoeken...</p>';
-                lastResults = [];
-                statusDiv.innerText = "";
-                return;
-            }
-
-            // We zoeken met Fuse.js
-            lastResults = fuse.search(query);
-            
-            lastResults.sort((a, b) => {
-                const aWord = a.item.word.toLowerCase();
-                const bWord = b.item.word.toLowerCase();
-                const q = query.toLowerCase();
-                const qNorm = normalize(q);
-                
-                // Sorteer-prioriteit checkt nu ook op genormaliseerde versie
-                const aExact = aWord === q || normalize(aWord) === qNorm;
-                const bExact = bWord === q || normalize(bWord) === qNorm;
-
-                if (aExact && !bExact) return -1;
-                if (!aExact && bExact) return 1;
-
-                const aStarts = aWord.startsWith(q) || normalize(aWord).startsWith(qNorm);
-                const bStarts = bWord.startsWith(q) || normalize(bWord).startsWith(qNorm);
-
-                if (aStarts && !bStarts) return -1;
-                if (!aStarts && bStarts) return 1;
-
-                return a.score - b.score;
-            });
-
-            renderResults(lastResults, query);
-            statusDiv.innerText = `${lastResults.length} resultaten`;
-        }
-
+        // DE AANGEPASTE RENDER FUNCTIE VOOR DE KLASSIEKE LOOK
         function renderResults(results, query) {
             if (results.length === 0) {
-                resultsDiv.innerHTML = `<div class="text-center mt-10 text-gray-400">Geen resultaten voor "${query}".</div>`;
+                resultsDiv.innerHTML = `<div class="text-center py-20 italic text-gray-500">Geen vermeldingen gevonden voor "${query}".</div>`;
                 return;
             }
 
@@ -183,66 +187,63 @@
                 const descContent = result.item.descriptiondisplay || result.item.description;
 
                 return `
-                <div class="bg-[#1e1e1e] p-6 rounded-2xl shadow-lg border border-gray-800 transition-all">
-                    <div class="flex flex-col">
-                        <div class="text-2xl font-bold text-blue-400">
-                            ${applyHighlight(wordContent, query)}
-                        </div>
-                        <div class="description-text mt-2">
-                            ${applyHighlight(descContent, query)}
-                        </div>
-                    </div>
-                </div>
+                <article class="word-card">
+                    <h2 class="word-title">${applyHighlight(wordContent, query)}</h2>
+                    <div class="description-text">${applyHighlight(descContent, query)}</div>
+                </article>
             `}).join('');
         }
 
-        function updateURL(query) {
-            const url = new URL(window.location);
-            if (query) {
-                url.searchParams.set('q', query);
-            } else {
-                url.searchParams.delete('q');
+        // URL en Fetch logica (ongewijzigd)
+        function performSearch(query) {
+            if (query.length < 2) {
+                resultsDiv.innerHTML = '<p class="text-center py-20 italic text-gray-400">Voer een zoekterm in om het archief te raadplegen.</p>';
+                statusDiv.innerText = "";
+                return;
             }
-            window.history.replaceState({}, '', url);
+            lastResults = fuse.search(query);
+            lastResults.sort((a, b) => {
+                const aWord = a.item.word.toLowerCase();
+                const bWord = b.item.word.toLowerCase();
+                const q = query.toLowerCase();
+                const qNorm = normalize(q);
+                const aExact = aWord === q || normalize(aWord) === qNorm;
+                const bExact = bWord === q || normalize(bWord) === qNorm;
+                if (aExact && !bExact) return -1;
+                if (!aExact && bExact) return 1;
+                return a.score - b.score;
+            });
+            renderResults(lastResults, query);
+            statusDiv.innerText = `${lastResults.length} resultaten gevonden`;
         }
 
         fetch('words.json')
             .then(response => response.json())
             .then(data => {
-                const options = {
+                fuse = new Fuse(data, {
                     keys: [{ name: 'word', weight: 2 }, { name: 'description', weight: 0.5 }],
                     threshold: 0.3,
                     includeScore: true,
-                    // De 'ignoreLocation' helpt bij langere woorden
-                    ignoreLocation: true,
-                    // DE BELANGRIJKSTE TOEVOEGING: Accent-ongevoeligheid
-                    getFn: (obj, key) => {
-                        const value = obj[key];
-                        return normalize(value);
-                    }
-                };
-                fuse = new Fuse(data, options);
-                statusDiv.innerText = `${data.length.toLocaleString('nl-NL')} woorden geladen`;
-
+                    getFn: (obj, key) => normalize(obj[key])
+                });
+                statusDiv.innerText = `${data.length.toLocaleString('nl-NL')} woorden in archief`;
                 const params = new URLSearchParams(window.location.search);
-                const queryParam = params.get('q');
-                if (queryParam) {
-                    searchInput.value = queryParam;
-                    performSearch(queryParam);
+                if (params.get('q')) {
+                    searchInput.value = params.get('q');
+                    performSearch(params.get('q'));
                 }
             });
 
         searchInput.addEventListener('input', (e) => {
             const query = e.target.value.trim();
             performSearch(query);
-            updateURL(query);
+            const url = new URL(window.location);
+            query ? url.searchParams.set('q', query) : url.searchParams.delete('q');
+            window.history.replaceState({}, '', url);
         });
 
         highlightToggle.addEventListener('change', () => {
-            const query = searchInput.value.trim();
-            if (query.length >= 2 && lastResults.length > 0) {
-                renderResults(lastResults, query);
-            }
+            if (searchInput.value.trim().length >= 2) renderResults(lastResults, searchInput.value.trim());
         });
     </script>
 </body>

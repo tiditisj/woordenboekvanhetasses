@@ -5,6 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Woordenboek van het Asses</title>
 <meta name="description" content="Woordenboek van het Asses — het dialect van Asse, opgesteld door Lode Pletinckx. Zoek op Assese of Nederlandse woorden.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Woordenboek van het Asses">
+<meta property="og:title" content="Woordenboek van het Asses">
+<meta property="og:description" content="Het dialect van Asse: meer dan 11.700 woorden en uitdrukkingen met hun betekenis, opgesteld door Lode Pletinckx.">
+<meta property="og:url" content="https://www.woordenboekvanhetasses.be/">
+<meta property="og:image" content="https://www.woordenboekvanhetasses.be/icon-512.png">
+<meta property="og:image:width" content="512">
+<meta property="og:image:height" content="512">
+<meta name="twitter:card" content="summary">
 <meta name="theme-color" content="#f3ecdc">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -39,7 +48,7 @@
       radial-gradient(ellipse at 50% 120%, rgba(120,90,40,.10), transparent 60%);
     background-attachment: fixed;
     color: var(--ink);
-    font: 17px/1.5 'EB Garamond', Georgia, 'Times New Roman', serif;
+    font: 19px/1.55 'EB Garamond', Georgia, 'Times New Roman', serif;
     font-variant-numeric: oldstyle-nums;
     min-height: 100vh;
     min-height: 100dvh;
@@ -184,7 +193,7 @@
   .section-title::before, .section-title::after { content: ""; flex: 1; border-top: 1px solid var(--rule); }
 
   .entry {
-    padding: 9px 0 10px 1.1em;
+    padding: 11px 0 11px 1.1em;
     text-indent: -1.1em;
     border-bottom: 1px dotted var(--rule);
     -webkit-hyphens: auto;
@@ -195,7 +204,8 @@
   .hw {
     display: inline;
     margin: 0 .25em 0 0;
-    font-size: 1.14em;
+    font-size: 1.6em;
+    line-height: 1.2;
     font-weight: 700;
     letter-spacing: .005em;
   }
@@ -271,7 +281,7 @@
     margin-bottom: 6px;
   }
   .card .entry { border: 0; padding-top: 0; padding-bottom: 0; }
-  .card .hw { display: block; text-indent: 0; margin: 0 0 4px -1.1em; font-size: 1.6rem; font-weight: 600; text-align: center; }
+  .card .hw { display: block; text-indent: 0; margin: 0 0 4px -1.1em; font-size: 2.5rem; line-height: 1.1; font-weight: 600; text-align: center; }
   .home-actions { text-align: center; margin: 22px 0 0; }
 
   /* Colofon */
@@ -288,6 +298,83 @@
   footer p { margin: 2px 0; }
   footer .by { font-style: italic; color: var(--ink-soft); }
   footer .rights { font-size: .8rem; }
+
+  /* Deelknop */
+  .share {
+    border: 0;
+    background: none;
+    color: var(--muted);
+    padding: 2px 4px;
+    margin-left: .35em;
+    vertical-align: -2px;
+    cursor: pointer;
+    text-indent: 0;
+    opacity: .75;
+  }
+  .share:hover { color: var(--red); opacity: 1; }
+
+  /* Deelpagina voor de ontvanger */
+  body.solo .bar, body.solo .meta { display: none; }
+  body.solo main { display: flex; flex-direction: column; justify-content: center; }
+  .solo-card { margin-top: 26px; }
+  .solo-card .entry + .entry { border-top: 1px dotted var(--rule); padding-top: 12px; margin-top: 10px; }
+  .solo-card .def { font-size: 1.06em; }
+  .solo-card .share { display: block; margin: 12px auto 0; padding: 6px 10px; text-align: center; }
+  .solo-card .share::after { content: " deel"; font-variant: small-caps; letter-spacing: .08em; font-size: .95rem; }
+  .invite {
+    text-align: center;
+    margin: 26px auto 8px;
+    max-width: 30rem;
+    color: var(--ink-soft);
+  }
+  .invite p { margin: 0 0 16px; font-style: italic; }
+  .invite em { font-style: normal; }
+  .invite .btn { display: inline-block; text-decoration: none; color: inherit; }
+
+  /* Deelmenu (als het toestel geen eigen deelmenu heeft) */
+  .sheet {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    background: rgba(33,28,22,0);
+    transition: background .2s;
+  }
+  .sheet[hidden] { display: none; }
+  .sheet.open { background: rgba(33,28,22,.35); }
+  .sheet-panel {
+    width: 100%;
+    max-width: 26rem;
+    margin: 0 10px calc(env(safe-area-inset-bottom) + 10px);
+    padding: 12px 14px 10px;
+    background: var(--paper-light);
+    border: 1px solid var(--ink);
+    outline: 1px solid var(--ink);
+    outline-offset: 3px;
+    transform: translateY(30px);
+    opacity: 0;
+    transition: transform .2s, opacity .2s;
+  }
+  .sheet.open .sheet-panel { transform: none; opacity: 1; }
+  .sheet-title { text-align: center; color: var(--red); font-weight: 600; margin: 0 0 6px; }
+  .sheet-title span { font-variant: normal; text-transform: none; letter-spacing: 0; color: var(--ink); font-style: italic; }
+  .sheet-opt {
+    display: block;
+    width: 100%;
+    padding: 11px 0;
+    border: 0;
+    border-top: 1px solid var(--rule);
+    background: none;
+    text-align: center;
+    color: var(--ink);
+    text-decoration: none;
+    font-size: 1.05rem;
+    cursor: pointer;
+  }
+  .sheet-opt:hover { color: var(--red); }
+  .sheet-cancel { color: var(--muted); font-style: italic; }
 
   .totop {
     position: fixed;
@@ -310,7 +397,7 @@
 
   /* ---------- Groter scherm ---------- */
   @media (min-width: 720px) {
-    body { font-size: 18px; }
+    body { font-size: 20px; }
     .masthead { padding-top: 40px; padding-bottom: 18px; }
     .masthead .sub { font-size: 1rem; }
     .letters { justify-content: center; }
@@ -361,6 +448,16 @@
 </footer>
 
 <button class="totop" id="totop" aria-label="Naar boven">↑</button>
+
+<div class="sheet" id="sheet" hidden>
+  <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <p class="sheet-title sc" id="sheetTitle">deel <span id="sheetWord"></span></p>
+    <a class="sheet-opt" id="shWa" target="_blank" rel="noopener">WhatsApp</a>
+    <a class="sheet-opt" id="shMail">E-mail</a>
+    <button type="button" class="sheet-opt" id="shCopy">Kopieer link</button>
+    <button type="button" class="sheet-opt sheet-cancel" id="shClose">Annuleren</button>
+  </div>
+</div>
 
 <script>
 (() => {
@@ -461,6 +558,16 @@
     });
     if (!FEATURED.length) FEATURED = DATA;
 
+    // Volgnummer bij gelijkluidende woorden (a (1), a (2) …) voor deellinks
+    const groups = new Map();
+    DATA.forEach((d, idx) => {
+      d.idx = idx;
+      const g = groups.get(d.wf) || [];
+      g.push(d);
+      groups.set(d.wf, g);
+    });
+    groups.forEach((g) => g.forEach((d, j) => { d.n = j + 1; d.hom = g.length; }));
+
     buildLetters();
     route();
   }
@@ -526,7 +633,55 @@
   /* ---------- Weergave ---------- */
   function entryHTML(d) {
     if (d.h === null) { d.h = cleanWord(d.e); d.dh = cleanDesc(d.e); }
-    return `<article class="entry"><h3 class="hw">${d.h}</h3> <span class="def">${d.dh}</span></article>`;
+    return `<article class="entry"><h3 class="hw">${d.h}</h3> <span class="def">${d.dh}</span>` +
+      `<button type="button" class="share" data-idx="${d.idx}" aria-label="Deel ${esc(d.e.word.trim())}" title="Deel dit woord">${SHARE_ICON}</button></article>`;
+  }
+
+  const SHARE_ICON = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7.5 7.5 12 3l4.5 4.5"/><path d="M5 12v7.5A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V12"/></svg>';
+
+  /* ---------- Delen ---------- */
+  const SITE_URL = location.origin + location.pathname;
+  const plainDesc = (d) => (d.e.description || '').replace(/\s+/g, ' ').trim();
+
+  function shareUrl(d) {
+    const u = new URL(SITE_URL);
+    u.searchParams.set('w', d.e.word.trim());
+    if (d.hom > 1) u.searchParams.set('n', d.n);
+    return u.href;
+  }
+
+  async function shareEntry(d) {
+    const word = d.e.word.trim();
+    const desc = plainDesc(d);
+    const snippet = desc.length > 160 ? desc.slice(0, 157).replace(/\s+\S*$/, '') + '…' : desc;
+    const url = shareUrl(d);
+    const title = `${word} — Woordenboek van het Asses`;
+    const text = `„${word}” in het Asses: ${snippet}`;
+    if (navigator.share) {
+      try { await navigator.share({ title, text, url }); return; }
+      catch (err) { if (err && err.name === 'AbortError') return; }
+    }
+    openSheet(word, title, text, url);
+  }
+
+  function openSheet(word, title, text, url) {
+    const sheet = $('sheet');
+    $('sheetWord').textContent = word;
+    $('shWa').href = 'https://wa.me/?text=' + encodeURIComponent(text + '\n' + url);
+    $('shMail').href = 'mailto:?subject=' + encodeURIComponent(title) + '&body=' + encodeURIComponent(text + '\n\n' + url);
+    const copy = $('shCopy');
+    copy.textContent = 'Kopieer link';
+    copy.onclick = async () => {
+      try { await navigator.clipboard.writeText(url); copy.textContent = 'Link gekopieerd ✓'; }
+      catch { prompt('Kopieer deze link:', url); }
+    };
+    sheet.hidden = false;
+    requestAnimationFrame(() => sheet.classList.add('open'));
+  }
+  function closeSheet() {
+    const sheet = $('sheet');
+    sheet.classList.remove('open');
+    setTimeout(() => { sheet.hidden = true; }, 200);
   }
 
   // Maak "z. woord"-verwijzingen klikbaar als dat woord in het woordenboek staat
@@ -710,6 +865,39 @@
     els.results.append(hint);
   }
 
+  // Deelpagina: enkel het gedeelde woord, met een uitnodiging om verder te bladeren
+  function showWord(w, n) {
+    resetView();
+    currentQuery = '';
+    const wf = fold(w.trim());
+    let list = DATA.filter((d) => d.wf === wf || d.keys.includes(wf));
+    if (n && list.some((d) => d.n === n)) list = list.filter((d) => d.n === n);
+    if (!list.length) {
+      document.body.classList.remove('solo');
+      els.q.value = w;
+      els.clear.classList.add('show');
+      showSearch(w);
+      return;
+    }
+    document.body.classList.add('solo');
+    document.title = `${list[0].e.word.trim()} — Woordenboek van het Asses`;
+
+    const card = document.createElement('section');
+    card.className = 'card solo-card';
+    card.innerHTML = `<div class="card-label sc">❦ uit het woordenboek ❦</div>`;
+    appendEntries(card, list, '');
+    els.results.append(card);
+
+    const invite = document.createElement('section');
+    invite.className = 'invite';
+    invite.innerHTML = `
+      <p>Dit woord komt uit het <em>Woordenboek van het Asses</em>, opgesteld door Lode Pletinckx:
+      meer dan ${nf.format(Math.floor(DATA.length / 100) * 100)} woorden en uitdrukkingen uit het dialect van Asse,
+      met hun betekenis en voorbeelden.</p>
+      <a class="btn sc" href="./">blader zelf door het woordenboek</a>`;
+    els.results.append(invite);
+  }
+
   /* ---------- Navigatie ---------- */
   function markLetter(L) {
     els.letters.querySelectorAll('button').forEach((b) => b.classList.toggle('active', b.dataset.l === L));
@@ -722,9 +910,13 @@
     const p = new URLSearchParams(location.search);
     const q = (p.get('q') || '').trim();
     const l = (p.get('l') || '').toLowerCase();
+    const w = (p.get('w') || '').trim();
+    document.body.classList.remove('solo');
+    document.title = 'Woordenboek van het Asses';
     if (document.activeElement !== els.q || !q) els.q.value = q;
     els.clear.classList.toggle('show', !!els.q.value);
-    if (q) { markLetter(null); showSearch(q); }
+    if (w && !q) { markLetter(null); showWord(w, parseInt(p.get('n'), 10) || 0); }
+    else if (q) { markLetter(null); showSearch(q); }
     else if (l) { markLetter(l); showLetter(l); }
     else { markLetter(null); showHome(); }
   }
@@ -772,6 +964,8 @@
     scrollToTopOfResults();
   });
   els.results.addEventListener('click', (e) => {
+    const sh = e.target.closest('button.share');
+    if (sh) { shareEntry(DATA[+sh.dataset.idx]); return; }
     const a = e.target.closest('a.xref');
     if (a) {
       e.preventDefault();
@@ -785,6 +979,10 @@
     }
   });
   window.addEventListener('popstate', route);
+  $('sheet').addEventListener('click', (e) => {
+    if (e.target.id === 'sheet' || e.target.closest('#shClose') || e.target.closest('a')) closeSheet();
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('sheet').hidden) closeSheet(); });
 
   els.hl.checked = localStorage.getItem('markeren') !== '0';
   els.hl.addEventListener('change', () => {

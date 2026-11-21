@@ -1,250 +1,806 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Woordenboek van het Asses</title>
-    <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <style>
-        /* Importeer de 'Old Style' krantenfonten */
-        @import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Source+Sans+Pro:wght@400;600&display=swap');
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Woordenboek van het Asses</title>
+<meta name="description" content="Woordenboek van het Asses — het dialect van Asse, opgesteld door Lode Pletinckx. Zoek op Assese of Nederlandse woorden.">
+<meta name="theme-color" content="#f3ecdc">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Asses">
+<link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="preload" href="words.json" as="fetch" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #f3ecdc;
+    --paper-light: #f9f4e8;
+    --ink: #211c16;
+    --ink-soft: #3d3327;
+    --muted: #75695a;
+    --rule: #cdbf9f;
+    --red: #8e2b1e;
+    --mark: #ecd48a;
+    --bar-h: 0px;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; scroll-padding-top: var(--bar-h); }
+  body {
+    margin: 0;
+    background: var(--paper);
+    background-image:
+      radial-gradient(ellipse at 50% -10%, rgba(255,255,255,.55), transparent 55%),
+      radial-gradient(ellipse at 50% 120%, rgba(120,90,40,.10), transparent 60%);
+    background-attachment: fixed;
+    color: var(--ink);
+    font: 17px/1.5 'EB Garamond', Georgia, 'Times New Roman', serif;
+    font-variant-numeric: oldstyle-nums;
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+  button, input { font: inherit; color: inherit; }
+  .sc { font-variant: small-caps; letter-spacing: .08em; text-transform: lowercase; }
 
-        :root {
-            --paper: #f9f7f2; /* De kleur van krantenpapier */
-            --ink: #121212;   /* Bijna zwart, maar zachter */
-            --border: #2f2f2f; /* Voor de scheidingslijnen */
-        }
+  /* ---------- Titelblad ---------- */
+  .masthead {
+    text-align: center;
+    padding: calc(env(safe-area-inset-top) + 18px) 16px 12px;
+  }
+  .masthead h1 {
+    font-family: 'IM Fell English', Georgia, serif;
+    font-weight: 400;
+    font-size: clamp(1.55rem, 7vw, 3.2rem);
+    line-height: 1.05;
+    margin: 0;
+  }
+  .masthead h1 a { color: inherit; text-decoration: none; }
+  .masthead h1 .van { font-style: italic; color: var(--red); }
+  .masthead .sub {
+    margin: 6px auto 0;
+    padding-top: 6px;
+    max-width: 30rem;
+    border-top: 3px double var(--ink);
+    font-size: .9rem;
+    color: var(--muted);
+    font-style: italic;
+  }
 
-        body { 
-            background-color: var(--paper); 
-            color: var(--ink); 
-            font-family: 'Libre Baskerville', serif;
-            scroll-behavior: smooth;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-        
-        /* Krantenkop */
-        header h1 {
-            font-family: 'Playfair Display', serif;
-            font-size: 3.5rem;
-            letter-spacing: -1.5px;
-            font-weight: 900;
-            border-bottom: 5px double var(--ink);
-            display: inline-block;
-            margin-bottom: 0.5rem;
-        }
+  /* ---------- Zoekbalk + duimindex (kleeft bovenaan) ---------- */
+  .bar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: rgba(243,236,220,.96);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    border-bottom: 1px solid var(--rule);
+    padding: 8px 0 0;
+  }
+  .bar-inner { max-width: 44rem; margin: 0 auto; padding: 0 14px; }
+  .search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 44px;
+    padding: 0 6px 0 12px;
+    background: var(--paper-light);
+    border: 1px solid var(--ink);
+    box-shadow: inset 0 1px 3px rgba(60,40,10,.08);
+  }
+  .search svg { flex: none; opacity: .65; }
+  .search input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    background: transparent;
+    outline: none;
+    font-size: 18px; /* >=16px: geen auto-zoom op iOS */
+    padding: 0;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .search input::placeholder { color: #9a8d79; font-style: italic; }
+  .search input::-webkit-search-cancel-button { display: none; }
+  .clear {
+    flex: none;
+    width: 34px; height: 34px;
+    border: 0; background: none;
+    font-size: 1.5rem; line-height: 1;
+    color: var(--muted);
+    cursor: pointer;
+    visibility: hidden;
+  }
+  .clear.show { visibility: visible; }
 
-        .header-top-border {
-            border-top: 1px solid var(--ink);
-            border-bottom: 1px solid var(--ink);
-            padding: 5px 0;
-            margin-bottom: 2rem;
-            font-family: 'Source Sans Pro', sans-serif;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            font-size: 0.75rem;
-        }
+  .letters {
+    display: flex;
+    gap: 3px;
+    overflow-x: auto;
+    padding: 7px 0 8px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+  }
+  .letters::-webkit-scrollbar { display: none; }
+  @media (max-width: 719px) {
+    .letters { -webkit-mask-image: linear-gradient(to right, #000 88%, transparent); mask-image: linear-gradient(to right, #000 88%, transparent); padding-right: 24px; }
+  }
+  .letters button {
+    flex: none;
+    scroll-snap-align: start;
+    width: 31px; height: 31px;
+    border-radius: 50%;
+    border: 1px solid transparent;
+    background: none;
+    font-family: 'IM Fell English', Georgia, serif;
+    font-size: 1.1rem;
+    line-height: 1;
+    padding: 0 0 2px;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+  }
+  .letters button:hover { border-color: var(--rule); }
+  .letters button.active { background: var(--ink); color: var(--paper); }
 
-        .sticky-header {
-            background-color: rgba(249, 247, 242, 0.95);
-            border-bottom: 2px solid var(--ink);
-            z-index: 100;
-        }
+  /* ---------- Inhoud ---------- */
+  main {
+    flex: 1;
+    width: 100%;
+    max-width: 44rem;
+    margin: 0 auto;
+    padding: 0 14px 24px;
+  }
+  .meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    font-size: .85rem;
+    color: var(--muted);
+    border-bottom: 1px solid var(--rule);
+  }
+  .meta label { display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; }
+  .meta input { accent-color: var(--ink); width: 15px; height: 15px; margin: 0; }
 
-        /* De zoekbalk: Minimalistisch & Klassiek */
-        #searchInput {
-            background-color: transparent !important;
-            border: none !important;
-            border-bottom: 2px solid var(--ink) !important;
-            border-radius: 0 !important;
-            font-family: 'Libre Baskerville', serif;
-            font-style: italic;
-            color: var(--ink) !important;
-            padding: 10px 0;
-            outline: none;
-        }
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 18px 0 2px;
+    font-size: .9rem;
+    font-weight: 600;
+    color: var(--red);
+    text-align: center;
+  }
+  .section-title::before, .section-title::after { content: ""; flex: 1; border-top: 1px solid var(--rule); }
 
-        /* Geen zwarte kaders meer, maar subtiele krantenlijnen */
-        .word-card {
-            border-bottom: 1px solid #d1d1d1;
-            padding: 2.5rem 0;
-            background: transparent !important;
-            box-shadow: none !important;
-        }
+  .entry {
+    padding: 9px 0 10px 1.1em;
+    text-indent: -1.1em;
+    border-bottom: 1px dotted var(--rule);
+    -webkit-hyphens: auto;
+    hyphens: auto;
+    overflow-wrap: break-word;
+  }
+  .entry:last-child { border-bottom: 0; }
+  .hw {
+    display: inline;
+    margin: 0 .25em 0 0;
+    font-size: 1.14em;
+    font-weight: 700;
+    letter-spacing: .005em;
+  }
+  .hw u, .def u { text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  .def { color: var(--ink-soft); }
+  .def i, .def em { color: var(--ink); }
+  .def b, .def strong { font-weight: 600; }
+  mark {
+    background: linear-gradient(transparent 50%, var(--mark) 50%, var(--mark) 92%, transparent 92%);
+    color: inherit;
+    padding: 0 1px;
+  }
+  a.xref {
+    color: var(--red);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(142,43,30,.35);
+  }
+  a.xref:hover { border-bottom-color: var(--red); }
 
-        .word-title {
-            font-family: 'Playfair Display', serif;
-            font-size: 2.4rem;
-            font-weight: 700;
-            line-height: 1.1;
-            margin-bottom: 0.75rem;
-            color: var(--ink);
-        }
+  .more {
+    display: block;
+    margin: 12px auto 4px;
+  }
+  .btn {
+    border: 1px solid var(--ink);
+    background: transparent;
+    padding: 7px 16px 8px;
+    cursor: pointer;
+    font-size: .95rem;
+  }
+  .btn:hover { background: var(--ink); color: var(--paper); }
 
-        .description-text {
-            line-height: 1.7;
-            font-size: 1.15rem;
-            color: #333;
-            max-width: 70ch;
-        }
+  .empty, .loading, .hint {
+    text-align: center;
+    font-style: italic;
+    color: var(--muted);
+    padding: 28px 8px;
+  }
+  .loading .orn { display: inline-block; animation: spin 2.4s linear infinite; font-style: normal; }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Highlighting zoals een subtiele marker op papier */
-        mark {
-            background-color: #fdf2a8;
-            color: inherit;
-            padding: 0 2px;
-            border-radius: 0;
-        }
+  /* Letter bladeren */
+  .browse-head {
+    display: flex;
+    align-items: flex-end;
+    gap: 14px;
+    padding: 14px 0 8px;
+    border-bottom: 3px double var(--ink);
+  }
+  .big-letter {
+    font-family: 'IM Fell English', Georgia, serif;
+    font-size: 4.2rem;
+    line-height: .8;
+    color: var(--red);
+  }
+  .browse-head .range { font-style: italic; color: var(--muted); padding-bottom: 2px; }
+  .sentinel { height: 1px; }
 
-        /* Custom scrollbar */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: var(--paper); }
-        ::-webkit-scrollbar-thumb { background: #ccc; }
+  /* Woord van de dag */
+  .card {
+    margin: 22px 4px 8px;
+    padding: 14px 16px 16px;
+    background: var(--paper-light);
+    border: 1px solid var(--ink);
+    outline: 1px solid var(--ink);
+    outline-offset: 3px;
+  }
+  .card-label {
+    text-align: center;
+    color: var(--red);
+    font-size: .9rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .card .entry { border: 0; padding-top: 0; padding-bottom: 0; }
+  .card .hw { display: block; text-indent: 0; margin: 0 0 4px -1.1em; font-size: 1.6rem; font-weight: 600; text-align: center; }
+  .home-actions { text-align: center; margin: 22px 0 0; }
 
-        /* Verwijder de schakelaar styling en maak het sober */
-        .switch-label {
-            font-family: 'Source Sans Pro', sans-serif;
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #666;
-        }
-    </style>
+  /* Colofon */
+  footer {
+    text-align: center;
+    padding: 18px 16px calc(env(safe-area-inset-bottom) + 22px);
+    border-top: 3px double var(--ink);
+    max-width: 44rem;
+    width: calc(100% - 28px);
+    margin: 0 auto;
+    color: var(--muted);
+  }
+  footer .orn { font-size: 1.3rem; color: var(--red); display: block; line-height: 1; margin-bottom: 4px; }
+  footer p { margin: 2px 0; }
+  footer .by { font-style: italic; color: var(--ink-soft); }
+  footer .rights { font-size: .8rem; }
+
+  .totop {
+    position: fixed;
+    right: 14px;
+    bottom: calc(env(safe-area-inset-bottom) + 14px);
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    border: 1px solid var(--ink);
+    background: var(--paper-light);
+    font-size: 1.1rem;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(40,25,5,.18);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(8px);
+    transition: opacity .2s, transform .2s;
+    z-index: 30;
+  }
+  .totop.show { opacity: 1; pointer-events: auto; transform: none; }
+
+  /* ---------- Groter scherm ---------- */
+  @media (min-width: 720px) {
+    body { font-size: 18px; }
+    .masthead { padding-top: 40px; padding-bottom: 18px; }
+    .masthead .sub { font-size: 1rem; }
+    .letters { justify-content: center; }
+    .letters button { width: 30px; }
+  }
+  @media (min-width: 1000px) {
+    main.wide { max-width: 66rem; }
+    .cols { column-count: 2; column-gap: 2.6rem; column-rule: 1px solid var(--rule); }
+    .cols .entry { break-inside: avoid; }
+    .cols .entry:last-child { border-bottom: 1px dotted var(--rule); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
 </head>
 <body>
 
-    <header class="max-w-4xl mx-auto pt-16 pb-4 text-center">
-        <h1>Woordenboek van het Asses</h1>
-        <div class="header-top-border">
-            <span>Editie Asse — <script>document.write(new Date().toLocaleDateString('nl-BE', {day:'numeric', month:'long', year:'numeric'}));</script></span>
-        </div>
-    </header>
+<header class="masthead">
+  <h1><a href="./">Woordenboek <span class="van">van het</span> Asses</a></h1>
+  <p class="sub">het dialect van Asse — opgesteld door Lode Pletinckx</p>
+</header>
 
-    <div class="sticky top-0 sticky-header py-6 mb-8">
-        <div class="max-w-3xl mx-auto px-4">
-            <input type="text" id="searchInput" 
-                placeholder="Zoek in het archief..." 
-                class="w-full text-2xl">
-            
-            <div class="mt-3 flex justify-between items-center">
-                <div id="status" class="text-[10px] text-gray-600 uppercase tracking-widest">
-                    Archief wordt geladen...
-                </div>
-                <div class="flex items-center gap-3">
-                    <span class="switch-label">Markeren</span>
-                    <input type="checkbox" id="highlightToggle" checked class="accent-black">
-                </div>
-            </div>
-        </div>
-    </div>
+<div class="bar" id="bar">
+  <div class="bar-inner">
+    <form class="search" role="search" id="searchForm" autocomplete="off">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21" stroke-linecap="round"/></svg>
+      <input type="search" id="q" placeholder="Zoek een woord…" aria-label="Zoek een woord"
+             autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="search">
+      <button type="button" class="clear" id="clear" aria-label="Wissen">×</button>
+    </form>
+    <nav class="letters" id="letters" aria-label="Blader per letter"></nav>
+  </div>
+</div>
 
-    <main class="max-w-3xl mx-auto px-4 flex-grow">
-        <div id="results" class="space-y-0">
-            </div>
-    </main>
+<main id="main">
+  <div class="meta">
+    <span id="status" class="sc">Archief wordt geopend…</span>
+    <label class="sc"><input type="checkbox" id="hl" checked> markeren</label>
+  </div>
+  <div id="results"><p class="loading"><span class="orn">❦</span><br>Het woordenboek wordt opengeslagen…</p></div>
+</main>
 
-    <footer class="w-full py-12 mt-20 border-t-4 border-double border-black text-center">
-        <p class="font-serif italic text-gray-700">
-            Opgesteld door Lode Pletinckx
-        </p>
-        <p class="text-[10px] uppercase tracking-[0.2em] mt-2 text-gray-500">
-            © Alle rechten voorbehouden
-        </p>
-    </footer>
+<footer>
+  <span class="orn">❦</span>
+  <p class="by">Opgesteld door Lode Pletinckx</p>
+  <p class="rights sc">© Alle rechten voorbehouden</p>
+</footer>
 
-    <script>
-        // ... (De rest van je JavaScript blijft hetzelfde, maar vervang de renderResults functie) ...
-        let fuse;
-        let lastResults = [];
-        const resultsDiv = document.getElementById('results');
-        const searchInput = document.getElementById('searchInput');
-        const statusDiv = document.getElementById('status');
-        const highlightToggle = document.getElementById('highlightToggle');
+<button class="totop" id="totop" aria-label="Naar boven">↑</button>
 
-        const normalize = (str) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+<script>
+(() => {
+  'use strict';
+  const $ = (s) => document.getElementById(s);
+  const els = {
+    q: $('q'), form: $('searchForm'), clear: $('clear'), letters: $('letters'),
+    results: $('results'), status: $('status'), hl: $('hl'), totop: $('totop'),
+    bar: $('bar'), main: $('main')
+  };
+  const nf = new Intl.NumberFormat('nl-BE');
+  const collator = new Intl.Collator('nl', { sensitivity: 'base', ignorePunctuation: true });
 
-        function applyHighlight(html, term) {
-            if (!term || !highlightToggle.checked) return html;
-            const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const regex = new RegExp(`(${escapedTerm})(?![^<]*>)`, 'gi');
-            return html.replace(regex, '<mark>$1</mark>');
-        }
+  let DATA = [];
+  let WORDSET = new Set();
+  let FEATURED = [];
+  let observer = null;
+  let currentQuery = '';
 
-        // DE AANGEPASTE RENDER FUNCTIE VOOR DE KLASSIEKE LOOK
-        function renderResults(results, query) {
-            if (results.length === 0) {
-                resultsDiv.innerHTML = `<div class="text-center py-20 italic text-gray-500">Geen vermeldingen gevonden voor "${query}".</div>`;
-                return;
-            }
+  /* ---------- Tekst-hulpjes ---------- */
+  // Zet tekens om naar kleine letters zonder accenten, met behoud van lengte
+  // (zodat markeringen precies op de originele tekst passen).
+  const foldCache = new Map();
+  function foldChar(c) {
+    let f = foldCache.get(c);
+    if (f === undefined) {
+      if (c === '\u2018' || c === '\u2019') f = "'";
+      else {
+        f = c.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        f = f.length ? f[0] : c;
+      }
+      foldCache.set(c, f);
+    }
+    return f;
+  }
+  function fold(s) {
+    let o = '';
+    for (let i = 0; i < s.length; i++) o += foldChar(s[i]);
+    return o;
+  }
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const escRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const stripTags = (h) => h.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&[a-z]+;|&#\d+;/gi, 'x');
+  const UNDERLINE = /<span[^>]*text-decoration:\s*underline;?[^>]*>([^<]*)<\/span>/gi;
 
-            resultsDiv.innerHTML = results.slice(0, 100).map(result => {
-                const wordContent = result.item.worddisplay || result.item.word;
-                const descContent = result.item.descriptiondisplay || result.item.description;
+  function cleanWord(e) {
+    const h = e.worddisplay || '';
+    const t = stripTags(h).replace(/\s+/g, '');
+    if (!h || t !== e.word.replace(/\s+/g, '')) return esc(e.word.trim());
+    return h.replace(UNDERLINE, '<u>$1</u>')
+            .replace(/<\/?(b|strong|span|p)\b[^>]*>/gi, '')
+            .replace(/\s+/g, ' ').trim();
+  }
 
-                return `
-                <article class="word-card">
-                    <h2 class="word-title">${applyHighlight(wordContent, query)}</h2>
-                    <div class="description-text">${applyHighlight(descContent, query)}</div>
-                </article>
-            `}).join('');
-        }
+  function cleanDesc(e) {
+    const plain = (e.description || '').trim();
+    let h = e.descriptiondisplay || '';
+    const tl = stripTags(h).replace(/\s+/g, ' ').trim().length;
+    const pl = plain.replace(/\s+/g, ' ').length;
+    // Enkele records bevatten foutief samengevoegde opmaak: val dan terug op platte tekst
+    if (!h || tl > pl * 1.3 + 30 || tl < pl * 0.7 - 30) {
+      return esc(plain).replace(/\r?\n\r?/g, '<br>');
+    }
+    return h.replace(UNDERLINE, '<u>$1</u>')
+            .replace(/<\/?(p|div)\b[^>]*>/gi, ' ')
+            .replace(/<\/?span\b[^>]*>/gi, '')
+            .replace(/<(b|strong|i|em|u)>(\s*)<\/\1>/gi, '$2')
+            .replace(/(\s|&nbsp;)+/g, ' ')
+            .replace(/^\s*(<br\s*\/?>\s*)+/i, '')
+            .replace(/(\s*<br\s*\/?>)+\s*$/i, '')
+            .trim();
+  }
 
-        // URL en Fetch logica (ongewijzigd)
-        function performSearch(query) {
-            if (query.length < 2) {
-                resultsDiv.innerHTML = '<p class="text-center py-20 italic text-gray-400">Voer een zoekterm in om het archief te raadplegen.</p>';
-                statusDiv.innerText = "";
-                return;
-            }
-            lastResults = fuse.search(query);
-            lastResults.sort((a, b) => {
-                const aWord = a.item.word.toLowerCase();
-                const bWord = b.item.word.toLowerCase();
-                const q = query.toLowerCase();
-                const qNorm = normalize(q);
-                const aExact = aWord === q || normalize(aWord) === qNorm;
-                const bExact = bWord === q || normalize(bWord) === qNorm;
-                if (aExact && !bExact) return -1;
-                if (!aExact && bExact) return 1;
-                return a.score - b.score;
-            });
-            renderResults(lastResults, query);
-            statusDiv.innerText = `${lastResults.length} resultaten gevonden`;
-        }
+  /* ---------- Data laden ---------- */
+  fetch('words.json')
+    .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(init)
+    .catch(() => {
+      els.status.textContent = 'fout bij laden';
+      els.results.innerHTML = '<p class="empty">Het woordenboek kon niet geladen worden. Probeer de pagina te herladen.</p>';
+    });
 
-        fetch('words.json')
-            .then(response => response.json())
-            .then(data => {
-                fuse = new Fuse(data, {
-                    keys: [{ name: 'word', weight: 2 }, { name: 'description', weight: 0.5 }],
-                    threshold: 0.3,
-                    includeScore: true,
-                    getFn: (obj, key) => normalize(obj[key])
-                });
-                statusDiv.innerText = `${data.length.toLocaleString('nl-NL')} woorden in archief`;
-                const params = new URLSearchParams(window.location.search);
-                if (params.get('q')) {
-                    searchInput.value = params.get('q');
-                    performSearch(params.get('q'));
-                }
-            });
+  function init(raw) {
+    DATA = [];
+    raw.forEach((e, i) => {
+      const w = (e.word || '').trim();
+      if (!w) return;
+      const wf = fold(w);
+      const keys = [...new Set([wf.replace(/\([^)]*\)/g, ''), wf.replace(/[()]/g, '')])];
+      const first = (wf.match(/[a-z]/) || ['#'])[0];
+      const d = { e, i, wf, keys, df: fold(e.description || ''), L: first, h: null, dh: null };
+      DATA.push(d);
+      keys.forEach((k) => WORDSET.add(k));
+    });
+    FEATURED = DATA.filter((d) => {
+      const len = (d.e.description || '').length;
+      return len > 70 && len < 420 && /<(i|em)>/.test(d.e.descriptiondisplay || '');
+    });
+    if (!FEATURED.length) FEATURED = DATA;
 
-        searchInput.addEventListener('input', (e) => {
-            const query = e.target.value.trim();
-            performSearch(query);
-            const url = new URL(window.location);
-            query ? url.searchParams.set('q', query) : url.searchParams.delete('q');
-            window.history.replaceState({}, '', url);
-        });
+    buildLetters();
+    route();
+  }
 
-        highlightToggle.addEventListener('change', () => {
-            if (searchInput.value.trim().length >= 2) renderResults(lastResults, searchInput.value.trim());
-        });
-    </script>
+  function buildLetters() {
+    const present = new Set(DATA.map((d) => d.L));
+    els.letters.innerHTML = [...present].filter((l) => l !== '#').sort()
+      .map((l) => `<button type="button" data-l="${l}" aria-label="Letter ${l.toUpperCase()}">${l.toUpperCase()}</button>`).join('');
+  }
+
+  /* ---------- Zoeken ---------- */
+  function levenshtein(a, b, max) {
+    if (Math.abs(a.length - b.length) > max) return max + 1;
+    let prev = new Array(b.length + 1);
+    for (let j = 0; j <= b.length; j++) prev[j] = j;
+    for (let i = 1; i <= a.length; i++) {
+      const cur = [i];
+      let rowMin = i;
+      for (let j = 1; j <= b.length; j++) {
+        const v = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+        cur.push(v);
+        if (v < rowMin) rowMin = v;
+      }
+      if (rowMin > max) return max + 1;
+      prev = cur;
+    }
+    return prev[b.length];
+  }
+
+  function search(qf) {
+    const hw = [], inDesc = [];
+    const whole = new RegExp('(^|[^a-z0-9])' + escRe(qf) + '($|[^a-z0-9])');
+    for (const d of DATA) {
+      let s = -1;
+      for (const k of d.keys) {
+        const t = k === qf ? 0 : k.startsWith(qf) ? 1 : (qf.length > 1 && k.includes(qf)) ? 2 : -1;
+        if (t >= 0 && (s < 0 || t < s)) s = t;
+      }
+      if (s >= 0) { hw.push([s, d]); continue; }
+      if (qf.length >= 2) {
+        const p = d.df.indexOf(qf);
+        if (p >= 0) inDesc.push([whole.test(d.df) ? 0 : 1, p < 80 ? 0 : 1, d]);
+      }
+    }
+    hw.sort((a, b) => a[0] - b[0] || a[1].i - b[1].i);
+    inDesc.sort((a, b) => a[0] - b[0] || a[1] - b[1] || a[2].i - b[2].i);
+
+    let similar = [];
+    if (hw.length < 3 && qf.length >= 3 && !qf.includes(' ')) {
+      const max = qf.length <= 5 ? 1 : 2;
+      const seen = new Set(hw.map((x) => x[1]));
+      for (const d of DATA) {
+        if (seen.has(d)) continue;
+        const dist = levenshtein(qf, d.keys[0], max);
+        if (dist <= max) similar.push([dist, d]);
+      }
+      similar.sort((a, b) => a[0] - b[0] || a[1].i - b[1].i);
+      similar = similar.slice(0, 12).map((x) => x[1]);
+    }
+    return { hw: hw.map((x) => x[1]), inDesc: inDesc.map((x) => x[2]), similar };
+  }
+
+  /* ---------- Weergave ---------- */
+  function entryHTML(d) {
+    if (d.h === null) { d.h = cleanWord(d.e); d.dh = cleanDesc(d.e); }
+    return `<article class="entry"><h3 class="hw">${d.h}</h3> <span class="def">${d.dh}</span></article>`;
+  }
+
+  // Maak "z. woord"-verwijzingen klikbaar als dat woord in het woordenboek staat
+  const XREF = /(^|[\s(;,.:])(z\.|o\.|zie)(\s+)([\p{L}'\u2019-]+(?:\(\p{L}+\))?)/gu;
+  function linkXrefs(root) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const nodes = [];
+    let n;
+    while ((n = walker.nextNode())) if (/\b(z|o|zie)\.?\s/.test(n.nodeValue)) nodes.push(n);
+    for (const node of nodes) {
+      const t = node.nodeValue;
+      let last = 0, m, changed = false;
+      const frag = document.createDocumentFragment();
+      XREF.lastIndex = 0;
+      while ((m = XREF.exec(t))) {
+        const word = m[4].replace(/-$/, '');
+        const key = fold(word).replace(/[()]/g, '');
+        if (!WORDSET.has(key)) continue;
+        const start = m.index + m[1].length + m[2].length + m[3].length;
+        frag.append(t.slice(last, start));
+        const a = document.createElement('a');
+        a.className = 'xref';
+        a.href = '?q=' + encodeURIComponent(word);
+        a.dataset.q = word;
+        a.textContent = word;
+        frag.append(a);
+        last = start + word.length;
+        changed = true;
+      }
+      if (!changed) continue;
+      frag.append(t.slice(last));
+      node.replaceWith(frag);
+    }
+  }
+
+  // Markeer de zoekterm, ongevoelig voor accenten, ook over opmaak heen
+  function highlight(root, qf) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const nodes = [];
+    let full = '', n;
+    while ((n = walker.nextNode())) { nodes.push([n, full.length]); full += n.nodeValue; }
+    const f = fold(full);
+    const ranges = [];
+    let p = f.indexOf(qf);
+    while (p >= 0) { ranges.push([p, p + qf.length]); p = f.indexOf(qf, p + qf.length); }
+    if (!ranges.length) return;
+    for (const [node, start] of nodes) {
+      const t = node.nodeValue;
+      const end = start + t.length;
+      const rs = ranges.filter((r) => r[1] > start && r[0] < end);
+      if (!rs.length) continue;
+      const frag = document.createDocumentFragment();
+      let cur = 0;
+      for (const r of rs) {
+        const a = Math.max(r[0] - start, 0), b = Math.min(r[1] - start, t.length);
+        if (a > cur) frag.append(t.slice(cur, a));
+        const mk = document.createElement('mark');
+        mk.textContent = t.slice(a, b);
+        frag.append(mk);
+        cur = b;
+      }
+      if (cur < t.length) frag.append(t.slice(cur));
+      node.replaceWith(frag);
+    }
+  }
+
+  function appendEntries(container, list, qf) {
+    const tpl = document.createElement('template');
+    tpl.innerHTML = list.map(entryHTML).join('');
+    tpl.content.querySelectorAll('.def').forEach(linkXrefs);
+    if (qf && qf.length >= 2 && els.hl.checked) {
+      tpl.content.querySelectorAll('.hw, .def').forEach((el) => highlight(el, qf));
+    }
+    container.append(tpl.content);
+  }
+
+  function section(title, list, qf, first = 30, step = 60) {
+    const wrap = document.createElement('section');
+    if (title) {
+      const h = document.createElement('h2');
+      h.className = 'section-title sc';
+      h.textContent = title;
+      wrap.append(h);
+    }
+    const box = document.createElement('div');
+    wrap.append(box);
+    let shown = 0;
+    const btn = document.createElement('button');
+    btn.className = 'btn more sc';
+    const more = (count) => {
+      appendEntries(box, list.slice(shown, shown + count), qf);
+      shown = Math.min(shown + count, list.length);
+      const rest = list.length - shown;
+      if (rest > 0) { btn.textContent = `toon nog ${nf.format(Math.min(rest, step))} van ${nf.format(rest)}`; wrap.append(btn); }
+      else btn.remove();
+    };
+    btn.addEventListener('click', () => more(step));
+    more(first);
+    return wrap;
+  }
+
+  function resetView(wide = false) {
+    if (observer) { observer.disconnect(); observer = null; }
+    els.results.innerHTML = '';
+    els.main.classList.toggle('wide', wide);
+  }
+
+  function showSearch(q) {
+    resetView();
+    const qf = fold(q).replace(/\s+/g, ' ').trim();
+    currentQuery = qf;
+    const r = search(qf);
+    const total = r.hw.length + r.inDesc.length;
+    els.status.textContent = total === 1 ? '1 vermelding' : `${nf.format(total)} vermeldingen`;
+
+    if (!total && !r.similar.length) {
+      els.results.innerHTML = `<p class="empty">Geen vermeldingen gevonden voor „${esc(q)}”.</p>`;
+      return;
+    }
+    if (!total) {
+      els.results.innerHTML = `<p class="empty">Geen vermeldingen gevonden voor „${esc(q)}”.</p>`;
+    }
+    const twoKinds = r.hw.length && r.inDesc.length;
+    if (r.hw.length) els.results.append(section(twoKinds || r.similar.length ? 'trefwoorden' : '', r.hw, qf));
+    if (r.similar.length) els.results.append(section('gelijkaardige woorden', r.similar, ''));
+    if (r.inDesc.length) els.results.append(section(r.hw.length || r.similar.length ? 'vermeld in de omschrijving' : '', r.inDesc, qf, r.hw.length ? 15 : 30));
+  }
+
+  function showLetter(L) {
+    resetView(true);
+    currentQuery = '';
+    const list = DATA.filter((d) => d.L === L)
+      .sort((a, b) => collator.compare(a.keys[0], b.keys[0]) || a.i - b.i);
+    if (!list.length) { showHome(); return; }
+    els.status.textContent = `${nf.format(list.length)} trefwoorden`;
+    const head = document.createElement('div');
+    head.className = 'browse-head';
+    head.innerHTML = `<span class="big-letter">${L.toUpperCase()}</span>
+      <span class="range">${esc(list[0].e.word.trim())} — ${esc(list[list.length - 1].e.word.trim())}</span>`;
+    const cols = document.createElement('div');
+    cols.className = 'cols';
+    const sentinel = document.createElement('div');
+    sentinel.className = 'sentinel';
+    els.results.append(head, cols, sentinel);
+
+    let shown = 0;
+    const chunk = () => {
+      appendEntries(cols, list.slice(shown, shown + 80), '');
+      shown += 80;
+      if (shown >= list.length && observer) { observer.disconnect(); observer = null; }
+    };
+    chunk();
+    if (shown < list.length) {
+      observer = new IntersectionObserver((ents) => { if (ents[0].isIntersecting) chunk(); }, { rootMargin: '1200px 0px' });
+      observer.observe(sentinel);
+    }
+  }
+
+  function showHome() {
+    resetView();
+    currentQuery = '';
+    els.status.textContent = `${nf.format(DATA.length)} trefwoorden`;
+    const today = new Date();
+    const key = today.getFullYear() * 1000 + Math.floor((today - new Date(today.getFullYear(), 0, 0)) / 864e5);
+    const pick = FEATURED[(key * 2654435761 >>> 0) % FEATURED.length];
+
+    const card = document.createElement('section');
+    card.className = 'card';
+    card.innerHTML = `<div class="card-label sc">❦ woord van de dag ❦</div>`;
+    appendEntries(card, [pick], '');
+    els.results.append(card);
+
+    const actions = document.createElement('div');
+    actions.className = 'home-actions';
+    actions.innerHTML = `<button type="button" class="btn sc" id="rnd">sla een willekeurige bladzijde open</button>`;
+    els.results.append(actions);
+
+    const hint = document.createElement('p');
+    hint.className = 'hint';
+    hint.innerHTML = 'Zoek op een Assees of Nederlands woord,<br>of blader per letter via de duimindex hierboven.';
+    els.results.append(hint);
+  }
+
+  /* ---------- Navigatie ---------- */
+  function markLetter(L) {
+    els.letters.querySelectorAll('button').forEach((b) => b.classList.toggle('active', b.dataset.l === L));
+    const act = els.letters.querySelector('.active');
+    if (act) act.scrollIntoView({ block: 'nearest', inline: 'center' });
+  }
+
+  function route() {
+    if (!DATA.length) return;
+    const p = new URLSearchParams(location.search);
+    const q = (p.get('q') || '').trim();
+    const l = (p.get('l') || '').toLowerCase();
+    if (document.activeElement !== els.q || !q) els.q.value = q;
+    els.clear.classList.toggle('show', !!els.q.value);
+    if (q) { markLetter(null); showSearch(q); }
+    else if (l) { markLetter(l); showLetter(l); }
+    else { markLetter(null); showHome(); }
+  }
+
+  function nav(params, push) {
+    const u = new URL(location.href);
+    u.search = '';
+    for (const [k, v] of Object.entries(params)) if (v) u.searchParams.set(k, v);
+    if (u.href === location.href) { route(); return; }
+    history[push ? 'pushState' : 'replaceState'](null, '', u);
+    route();
+  }
+
+  // Zorg dat de resultaten net onder de kleefbalk beginnen
+  function scrollToTopOfResults() {
+    const top = els.bar.offsetTop;
+    if (window.scrollY > top) window.scrollTo(0, top);
+  }
+
+  let typingTimer;
+  els.q.addEventListener('input', () => {
+    els.clear.classList.toggle('show', !!els.q.value);
+    clearTimeout(typingTimer);
+    typingTimer = setTimeout(() => {
+      nav({ q: els.q.value.trim() }, false);
+      scrollToTopOfResults();
+    }, 140);
+  });
+  els.form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    clearTimeout(typingTimer);
+    nav({ q: els.q.value.trim() }, false);
+    els.q.blur();
+  });
+  els.clear.addEventListener('click', () => {
+    els.q.value = '';
+    nav({}, false);
+    els.q.focus();
+  });
+  els.letters.addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-l]');
+    if (!b) return;
+    els.q.blur();
+    nav({ l: b.dataset.l }, true);
+    scrollToTopOfResults();
+  });
+  els.results.addEventListener('click', (e) => {
+    const a = e.target.closest('a.xref');
+    if (a) {
+      e.preventDefault();
+      nav({ q: a.dataset.q }, true);
+      scrollToTopOfResults();
+      return;
+    }
+    if (e.target.closest('#rnd')) {
+      const d = FEATURED[Math.floor(Math.random() * FEATURED.length)];
+      nav({ q: d.e.word.trim() }, true);
+    }
+  });
+  window.addEventListener('popstate', route);
+
+  els.hl.checked = localStorage.getItem('markeren') !== '0';
+  els.hl.addEventListener('change', () => {
+    localStorage.setItem('markeren', els.hl.checked ? '1' : '0');
+    if (currentQuery) route();
+  });
+
+  // Hoogte van de kleefbalk doorgeven aan CSS + knop "naar boven"
+  const setBarH = () => document.documentElement.style.setProperty('--bar-h', els.bar.offsetHeight + 'px');
+  setBarH();
+  window.addEventListener('resize', setBarH);
+  window.addEventListener('scroll', () => {
+    els.totop.classList.toggle('show', window.scrollY > 900);
+  }, { passive: true });
+  els.totop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+})();
+</script>
 </body>
 </html>
